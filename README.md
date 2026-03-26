@@ -1,6 +1,6 @@
-# gwpgen
+# gwpgen.py
 
-**gwpgen** is an entropy-driven, cryptographically sound password generator
+**gwpgen.py** is an entropy-driven, cryptographically sound password generator
 written in Python.
 
 It generates strong random passwords using the operating system's
