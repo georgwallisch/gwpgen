@@ -196,6 +196,14 @@ hV3#-F8kW-rP2q-M9bC
 8Qw@-sF3T-vX9d-H4mL
 N7x!-q2pD-KM9f-Wz3R
 
+Short options can be grouped together:
+
+`$ ./gwpgen.py --strong -vapg`
+
+Equivalent to:
+
+`$ ./gwpgen.py --strong -v -a -p -g`
+
 Generate a numeric password for embedded devices such as pay terminals using a dot as separator:
 
 ```bash
@@ -217,6 +225,12 @@ or stronger:
 $ ./gwpgen.py --stronger -apg 4
 ```
 
+Shorthand method: Group size default 4 and -G combines -g and -p:
+
+```bash
+$ ./gwpgen.py --stronger -aG
+```
+
 Example output: OLS5-9YKM-291c-vfv7-su5h-38Sx
 
 or with symbols and not grouped:
@@ -229,8 +243,8 @@ Example output: 7a&b+GoJy(SNV;RdlM53M
 
 ## License
 
-MIT License
+![License](https://img.shields.io/github/license/georgwallisch/gwpgen)
 
 Copyright (c) 2026 Georg Wallisch
 
-See LICENSE for details.
+MIT License – see [LICENSE](./LICENSE)
