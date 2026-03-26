@@ -33,7 +33,7 @@ ENTROPY_PRESETS = {
 }
 
 PROGNAME = "gwpgen"
-VERSION = "1.2"
+VERSION = "1.3"
 
 UPPER = string.ascii_uppercase
 LOWER = string.ascii_lowercase
@@ -44,6 +44,8 @@ SYMBOLS = "!$%&(),.-;:#+"
 MAX_ENTROPY = 1000
 MAX_LENGTH = 250
 MAX_NUMBER = 500
+DEFAULT_GROUP_SIZE = 4
+DEFAULT_SEPARATOR = "-"
 urandom_bytes_used = 0
 
 
@@ -281,10 +283,13 @@ def main() -> None:
                             help="Do not enforce at least one character per class")
         parser.set_defaults(enforce_classes=True)
 
-        parser.add_argument("-g", "--group", type=int, default=0,
-                            help="Group characters into blocks")
-        parser.add_argument("-s","--separator", default="-",
-                            help="Group separator")
+        parser.add_argument("-g", "--group", type=int, nargs="?", const=DEFAULT_GROUP_SIZE, default=0, metavar="N",
+                            help=f"Group characters into blocks (default: {DEFAULT_GROUP_SIZE} if flag is used without value)")
+        parser.add_argument("-G", type=int, nargs="?", const=DEFAULT_GROUP_SIZE, metavar="N",
+                            help=f"Shortcut for '-g [N] -p' (default N={DEFAULT_GROUP_SIZE})")
+        
+        parser.add_argument("-s","--separator", default=DEFAULT_SEPARATOR,
+                            help=f"Group separator (default '{DEFAULT_SEPARATOR}'")
         parser.add_argument("-p","--pad-group", action="store_true",
                             help="Pad the last group to full group length")
         parser.add_argument("-o", "--output",
@@ -391,6 +396,13 @@ def main() -> None:
                     
                 if args.number > MAX_NUMBER:
                     parser.error(f"Number limit exceeded (max {MAX_NUMBER}). Use --no-limits to override.")
+                    
+            if args.G is not None:
+                if args.group != 0 or args.pad_group:
+                    parser.error("'-G' cannot be combined with '-g' or '-p'")
+                else:
+                    args.group = args.G
+                    args.pad_group = True
 
             passwords = build_passwords(
                 alphabet=alphabet,
