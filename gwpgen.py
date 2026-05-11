@@ -46,6 +46,7 @@ MAX_LENGTH = 250
 MAX_NUMBER = 500
 DEFAULT_GROUP_SIZE = 4
 DEFAULT_SEPARATOR = "-"
+DEFAULT_ENCODING = "utf-8"
 urandom_bytes_used = 0
 
 
@@ -56,7 +57,7 @@ urandom_bytes_used = 0
 def rand_index(k: int, mask: int) -> int:
     """Ziehe einen gleichverteilten Index < k mittels Rejection Sampling."""
     while True:
-        b = int.from_bytes(random_bytes(1), "big") & mask
+        b = int.from_bytes(random_bytes(1), 'big') & mask
         if b < k:
             return b
 
@@ -124,6 +125,7 @@ def build_passwords(alphabet: str,
         
     logging.debug("Alphabet size: %d", k)
     logging.debug("Alphabet: %s", alphabet)
+    logging.debug("Number of character classes: %d", len(classes))
     logging.debug("RNG bits per character: %d", bits)
     logging.debug("Entropy per char: %.2f", entropy_per_char)
     if target_length:
@@ -214,7 +216,7 @@ def write_passwords(passwords, args):
         if os.path.exists(args.output) and not args.force:
             raise ValueError(f"File '{args.output}' already exists (use --force to overwrite)")
         try:
-            f = open(args.output, "w", encoding="utf-8")
+            f = open(args.output, 'w', encoding=args.encoding)
         except OSError as e:
             raise ValueError(f"Cannot write to '{args.output}': {e.strerror}")
 
@@ -235,12 +237,12 @@ def write_passwords(passwords, args):
         if f:
             f.close()
 
-def read_passwords(path):
+def read_passwords(path:str, encoding:str):
     if path == "-":
         return [line.strip() for line in sys.stdin if line.strip()]
     else:
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, 'r', encoding=encoding) as f:
                 return [line.strip() for line in f if line.strip()]
         except OSError as e:
             raise ValueError(f"Cannot read from '{path}': {e.strerror}")
@@ -274,6 +276,8 @@ def main() -> None:
                             help="Digits (0–9)")
         parser.add_argument("-m", "--symbols", nargs="?", const=SYMBOLS,
                             help="Use symbols (optionally specify custom alphabet)")
+        parser.add_argument("-c", "--custom-alphabet", metavar="FILE",
+                            help="Read custom alphabet from file or '-' for stdin (one line per different character class)")
         parser.add_argument("-x","--hex-lower", action="store_true",
                             help="Lowercase hexadecimal characters (0-9a-f)")
         parser.add_argument("-X","--hex-upper", action="store_true",
@@ -318,6 +322,9 @@ def main() -> None:
         
         parser.add_argument("--no-limits", action="store_true",
                             help="Disable safety limits for entropy and password length")
+        
+        parser.add_argument("--encoding", default=DEFAULT_ENCODING,
+                            help=f"Encoding to use for input and output (default: {DEFAULT_ENCODING})")
 
         parser.add_argument("-v", "--verbose", action="store_true",
                             help="Verbose output")
@@ -332,7 +339,7 @@ def main() -> None:
         )
         
         if args.input:
-           passwords = read_passwords(args.input)
+           passwords = read_passwords(args.input, args.encoding)
                    
         else:
             
@@ -347,7 +354,18 @@ def main() -> None:
     
             classes: List[str] = []
             alphabet = ""
-    
+                        
+            if args.custom_alphabet:
+                try:
+                    with open(args.custom_alphabet, 'r', encoding=args.encoding) as cafile:
+                        for line in cafile:
+                            cline = line.strip()
+                            if len(cline) > 0:
+                                classes.append(cline)
+                                alphabet += cline   
+                except OSError as e:
+                    raise ValueError(f"Cannot read from '{args.custom_alphabet}': {e.strerror}")
+
             if args.hex_lower:
                 classes.append(HEXLOW)
                 alphabet += HEXLOW
@@ -364,6 +382,7 @@ def main() -> None:
                 if args.digits or args.alphanum:
                     classes.append(DIGITS)
                     alphabet += DIGITS
+                    
             if args.symbols is not None:
                 if args.symbols == "":
                     parser.error("Symbol alphabet must not be empty")
